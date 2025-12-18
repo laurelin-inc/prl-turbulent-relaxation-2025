@@ -1,0 +1,117 @@
+!==============================================================================
+! Stella: CYCLONE - Lynden-Bell Δ=-0.05 (MILD anisotropy)
+!==============================================================================
+&physics_flags
+  nonlinear = .true.
+  full_flux_surface = .false.
+/
+
+&species_knobs
+  nspec = 2
+/
+
+&species_parameters_1
+  z = 1.0
+  mass = 1.0
+  dens = 1.0
+  temp = 1.0
+  
+  ! MILD ANISOTROPY: Δ = -0.05
+  tpar = 1.0
+  tperp = 0.90
+  use_anisotropic_temp = .true.
+  
+  tprim = 6.92
+  fprim = 2.22
+  type = 'ion'
+/
+
+&species_parameters_2
+  z = -1.0
+  mass = 0.000545
+  dens = 1.0
+  temp = 1.0
+  tprim = 6.92
+  fprim = 2.22
+  type = 'electron'
+/
+
+&kt_grids_knobs
+  grid_option = 'box'
+/
+
+&parameters_kxky_grids_box
+  nx = 64
+  ny = 32
+  y0 = 10.0
+  jtwist = 100
+/
+
+&zgrid_parameters
+  nzed = 32
+  nperiod = 1
+  boundary_option = 'linked'
+/
+
+&vpamu_grids_parameters
+  nvgrid = 12
+  nmu = 8
+  vpa_max = 3.0
+/
+
+&geo_knobs
+  geo_option = 'miller'
+/
+
+&millergeo_parameters
+  rhoc = 0.5
+  qinp = 1.4
+  shat = 0.8
+  kappa = 1.0
+  tri = 0.0
+  rgeo = 3.0
+  rmaj = 3.0
+  betaprim = 0.02
+  d2qdr2 = 0.0
+  d2psidr2 = 0.0
+  nzed_local = 128
+/
+
+&parameters_numerical
+  delt = 0.01
+  nstep = 50000
+  print_extra_info_to_terminal = .true.
+/
+
+&physics_parameters
+  rhostar = -1.0
+/
+
+&run_parameters
+  advance_method = 'rk3'
+/
+
+&init_g_knobs
+  ginit_option = 'noise'
+  phiinit = 0.001
+  width0 = -1.0
+/
+
+&stella_diagnostics_knobs
+  nsave = 100
+  nwrite = 10
+  write_omega = .true.
+  write_phi_vs_time = .true.
+  write_fluxes_kxky = .true.
+  write_moments = .true.
+  save_for_restart = .true.
+/
+
+&dissipation
+  hyper_dissipation = .true.
+/
+
+&collisions_knobs
+  collision_model = 'dougherty'
+  nu = 0.01
+/

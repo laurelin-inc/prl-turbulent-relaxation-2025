@@ -1,0 +1,182 @@
+!==============================================================================
+! Stella Input File: CYCLONE Base Case - Maxwellian Initialization
+! PRL Paper 6: Gyrokinetic Validation of Lynden-Bell Anisotropy
+!==============================================================================
+! This is the baseline simulation with standard Maxwellian initialization
+! Reference: Dimits et al., Phys. Plasmas 7, 969 (2000)
+! Adapted for Stella gyrokinetic code
+!==============================================================================
+
+&physics_flags
+  nonlinear = .true.
+  full_flux_surface = .false.
+/
+
+&species_knobs
+  nspec = 2  ! Ions + electrons
+/
+
+!==============================================================================
+! Ion species (Deuterium)
+!==============================================================================
+&species_parameters_1
+  z = 1.0          ! Charge
+  mass = 1.0       ! Mass (in units of proton mass)
+  dens = 1.0       ! Density (normalized)
+  temp = 1.0       ! Temperature (normalized)
+  tprim = 6.92     ! R/L_T (temperature gradient) - CYCLONE value
+  fprim = 2.22     ! R/L_n (density gradient) - CYCLONE value
+  type = 'ion'
+/
+
+!==============================================================================
+! Electron species
+!==============================================================================
+&species_parameters_2
+  z = -1.0         ! Charge
+  mass = 0.000545  ! Electron mass/proton mass
+  dens = 1.0       ! Density (normalized)
+  temp = 1.0       ! Temperature (normalized)
+  tprim = 6.92     ! R/L_T (same as ions for Cyclone)
+  fprim = 2.22     ! R/L_n (same as ions)
+  type = 'electron'
+/
+
+!==============================================================================
+! Wavenumber grid (box geometry for turbulence)
+!==============================================================================
+&kt_grids_knobs
+  grid_option = 'box'
+/
+
+&parameters_kxky_grids_box
+  nx = 64          ! Radial modes
+  ny = 32          ! Binormal modes
+  y0 = 10.0        ! Box size in y direction
+  jtwist = 100     ! Connection length
+/
+
+!==============================================================================
+! Parallel (field-line) grid
+!==============================================================================
+&zgrid_parameters
+  nzed = 32        ! Grid points along field line
+  nperiod = 1      ! Number of poloidal turns
+  boundary_option = 'linked'  ! Periodic boundary
+/
+
+!==============================================================================
+! Velocity space grid
+!==============================================================================
+&vpamu_grids_parameters
+  nvgrid = 12      ! Parallel velocity grid points
+  nmu = 8          ! Magnetic moment grid points
+  vpa_max = 3.0    ! Max v_parallel in thermal velocities
+/
+
+!==============================================================================
+! Geometry (Miller model for CYCLONE - Stella compatible)
+!==============================================================================
+&geo_knobs
+  geo_option = 'miller'
+/
+
+&millergeo_parameters
+  rhoc = 0.5       ! r/a position
+  qinp = 1.4       ! Safety factor q
+  shat = 0.8       ! Magnetic shear s = r/q dq/dr
+  kappa = 1.0      ! Elongation
+  tri = 0.0        ! Triangularity
+  rgeo = 3.0       ! Major radius / minor radius
+  rmaj = 3.0       ! Major radius (normalized)
+  betaprim = 0.0   ! β' for electromagnetic (0 for electrostatic)
+  d2qdr2 = 0.0     ! Second derivative of q
+  d2psidr2 = 0.0   ! Second derivative of psi
+  nzed_local = 128 ! Local field line resolution
+/
+
+!==============================================================================
+! Time stepping and run control
+!==============================================================================
+&knobs
+  delt = 0.01      ! Time step (in units of R/v_thi)
+  nstep = 50000    ! Number of time steps (500 R/v_thi total time)
+  print_extra_info_to_terminal = .true.
+/
+
+!==============================================================================
+! Time advance scheme
+!==============================================================================
+&time_advance_knobs
+  explicit_option = 'rk3'  ! 3rd order Runge-Kutta
+/
+
+!==============================================================================
+! Initialization
+!==============================================================================
+&init_g_knobs
+  ginit_option = 'noise'   ! Random noise initialization
+  phiinit = 0.001          ! Initial perturbation amplitude
+  width0 = -1.0            ! Width of initial perturbation (-1 = defaults)
+/
+
+!==============================================================================
+! Diagnostics and output
+!==============================================================================
+&stella_diagnostics_knobs
+  nsave = 100              ! Save full data every 100 steps
+  nwrite = 10              ! Write to screen every 10 steps
+
+  ! Heat flux diagnostics (CRITICAL for Paper 6)
+  write_omega = .true.           ! Write growth rates
+  write_phi_vs_time = .true.     ! Write potential vs time
+
+  ! Particle and heat fluxes
+  write_fluxes_kxky = .true.     ! Write fluxes in kx-ky space
+  write_moments = .true.         ! Write density, temperature, etc.
+
+  ! Anisotropy diagnostics (CRITICAL for Paper 6)
+  ! NOTE: Stella outputs moments which we'll use to calculate Δ
+  save_for_restart = .true.      ! Enable restart capability
+/
+
+!==============================================================================
+! Dissipation (for numerical stability)
+!==============================================================================
+&dissipation
+  hyper_dissipation = .true.   ! Hyperdiffusion for stability at small scales
+/
+
+!==============================================================================
+! Collisions
+!==============================================================================
+&collisions_knobs
+  collision_model = 'dougherty'  ! Pitch-angle scattering model
+  nu = 0.01                      ! Collision frequency ν/Ω_i = 0.01
+/
+
+!==============================================================================
+! NOTES FOR PAPER 6:
+!
+! This simulation uses STANDARD MAXWELLIAN initialization:
+!   F_0 = n * exp(-E/T)
+!   where E = m*v_parallel^2/2 + μ*B
+!
+! Expected results (from Maxwellian):
+!   - Heat flux: Q_i ~ baseline value
+!   - Anisotropy: Δ ≈ 0 (isotropic Maxwellian)
+!   - ITG turbulence with standard transport levels
+!
+! To extract data for Paper 6:
+!   1. Heat flux Q_i: from .out.nc file
+!   2. Anisotropy Δ: calculate from moments output
+!   3. Velocity spectra: from distribution function output
+!
+! β-scan: Run with β = [0.01, 0.1, 0.5, 1.0] to test scaling Δ ≈ -1/(2β)
+!
+! Stella vs GS2:
+!   - Stella is modern gyrokinetic code (sister to GS2)
+!   - Developed by same community (Barnes, Parra, Dorland)
+!   - Already listed in paper abstract!
+!   - Same physics: ITG turbulence, heat flux, anisotropy
+!==============================================================================
